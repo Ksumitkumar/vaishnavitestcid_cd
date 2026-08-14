@@ -62,3 +62,31 @@ uses: actions/upload-artifact@v4
 with:
 name: release-apk
 path: build/app/outputs/flutter-apk/app-release.apk
+
+release:
+name: Create GitHub Release
+runs-on: ubuntu-latest
+needs: build
+
+# Only create a release when code is pushed to main.
+# Do not create releases for Pull Requests.
+if: github.event_name == 'push'
+
+permissions:
+contents: write
+
+steps:
+- name: Download APK
+uses: actions/download-artifact@v4
+with:
+name: release-apk
+path: apk
+
+- name: Create GitHub Release
+uses: softprops/action-gh-release@v2
+with:
+tag_name: v1.0.${{ github.run_number }}
+name: Release v1.0.${{ github.run_number }}
+files: apk/app-release.apk
+env:
+GITHUB_TOKEN: ${{ secrets.TOKEN }}
