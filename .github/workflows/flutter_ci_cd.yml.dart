@@ -45,4 +45,4 @@ token: ${{ secrets.TOKEN }}
 
 
 # push to master, main, develop
-# pull request on main master
+# pull request on main maste
