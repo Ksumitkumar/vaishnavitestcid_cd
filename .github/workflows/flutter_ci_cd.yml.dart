@@ -1,13 +1,16 @@
-name: Flutter CI/CD
+name: Build & Release
 
 on:
-push:
-branches:
-- main
-
 pull_request:
 branches:
 - main
+- master
+
+push:
+branches:
+- main
+- master
+- develop
 
 jobs:
 test:
@@ -22,6 +25,7 @@ uses: actions/checkout@v4
 uses: subosito/flutter-action@v2
 with:
 channel: stable
+architecture: x64
 cache: true
 
 - name: Flutter version
@@ -49,38 +53,42 @@ uses: actions/checkout@v4
 uses: subosito/flutter-action@v2
 with:
 channel: stable
+architecture: x64
 cache: true
 
 - name: Install dependencies
 run: flutter pub get
 
 - name: Build APK
-run: flutter build apk --release
+run: flutter build apk --release --split-per-abi
 
 - name: Upload APK
 uses: actions/upload-artifact@v4
 with:
-name: release-apk
-path: build/app/outputs/flutter-apk/app-release.apk
+name: android-apks
+path: build/app/outputs/apk/release/*.apk
 
-release:
-name: Create GitHub Release
-runs-on: ubuntu-latest
-needs: build
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
 
-# Only create a release when code is pushed to main.
-# Do not create releases for Pull Requests.
-if: github.event_name == 'push'
+    # Release only when code is pushed to main/master.
+    # No release for pull requests or develop.
+    if: >
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/master')
 
-permissions:
-contents: write
+    permissions:
+      contents: write
 
-steps:
-- name: Download APK
-uses: actions/download-artifact@v4
-with:
-name: release-apk
-path: apk
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apks
+          path: apk
 
 - name: Create GitHub Release
 uses: softprops/action-gh-release@v2
