@@ -1,100 +1,48 @@
-name: Build & Release
-
 on:
 pull_request:
 branches:
 - main
-- master
 
 push:
 branches:
 - main
-- master
-- develop
 
+name: "Build & Release"
 jobs:
-test:
-name: Test Flutter App
-runs-on: ubuntu-latest
-
-steps:
-- name: Checkout code
-uses: actions/checkout@v4
-
-- name: Setup Flutter
-uses: subosito/flutter-action@v2
-with:
-channel: stable
-architecture: x64
-cache: true
-
-- name: Flutter version
-run: flutter --version
-
-- name: Install dependencies
-run: flutter pub get
-
-- name: Analyze code
-run: flutter analyze
-
-- name: Run tests
-run: flutter test
-
 build:
-name: Build Android APK
-runs-on: ubuntu-latest
-needs: test
-
+name: Build & Release
+runs-on: macos-latest
 steps:
-- name: Checkout code
-uses: actions/checkout@v4
-
-- name: Setup Flutter
-uses: subosito/flutter-action@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-java@v3
 with:
-channel: stable
+distribution: 'zulu'
+java-version: '17'
+- uses: subosito/flutter-action@v2
+with:
+channel: 'stable'
 architecture: x64
-cache: true
 
-- name: Install dependencies
-run: flutter pub get
-
-- name: Build APK
-run: flutter build apk --release --split-per-abi
-
-- name: Upload APK
-uses: actions/upload-artifact@v4
+- run: flutter build apk --release --split-per-abi
+- run: |
+flutter build ios --no-codesign
+cd build/ios/iphoneos
+mkdir Payload
+cd Payload
+ln -s ../Runner.app
+cd ..
+zip -r app.ipa Payload
+- name: Push to Releases
+uses: ncipollo/release-action@v1
 with:
-name: android-apks
-path: build/app/outputs/apk/release/*.apk
+artifacts: "build/app/outputs/apk/release/*,build/ios/iphoneos/app.ipa"
+tag: v1.0.${{ github.run_number }}
+token: ${{ secrets.TOKEN }}
 
-  release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: build
 
-    # Release only when code is pushed to main/master.
-    # No release for pull requests or develop.
-    if: >
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' ||
-       github.ref == 'refs/heads/master')
 
-    permissions:
-      contents: write
 
-    steps:
-      - name: Download APK
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apks
-          path: apk
 
-- name: Create GitHub Release
-uses: softprops/action-gh-release@v2
-with:
-tag_name: v1.0.${{ github.run_number }}
-name: Release v1.0.${{ github.run_number }}
-files: apk/app-release.apk
-env:
-GITHUB_TOKEN: ${{ secrets.TOKEN }}
+
+# push to master, main, develop
+# pull request on main master
