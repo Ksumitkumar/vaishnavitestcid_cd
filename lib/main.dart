@@ -13,25 +13,25 @@ GoRouter goRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (BuildContext, state) {
+      builder: (buildContext, state) {
         return SplashScreen();
       },
     ),
     GoRoute(
       path: '/login',
-      builder: (BuildContext, state) {
+      builder: (buildContext, state) {
         return LoginScreen();
       },
     ),
     GoRoute(
       path: '/home',
-      builder: (BuildContext, state) {
+      builder: (buildContext, state) {
         return HomeScreen();
       },
     ),
     GoRoute(
       path: '/profile',
-      builder: (BuildContext, state) {
+      builder: (buildContext, state) {
         return ProfileScreen();
       },
     ),
